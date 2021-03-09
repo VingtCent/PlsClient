@@ -1,0 +1,65 @@
+@page "/newgame"
+
+@if (!game.Started)
+{
+    <h1>Nouvelle partie</h1>
+    <div>
+        <EditForm Model="@game" OnValidSubmit="@HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <p>
+                <label>Joueurs:</label>
+                <InputNumber id="players" @bind-Value="game.Players" />
+            </p>
+            <p>
+                <label>Villes:</label>
+                <InputNumber id="playerCards" @bind-Value="game.Cities" />
+            </p>
+            <p>
+                <label>Ravitaillements:</label>
+                <InputNumber id="refuelings" @bind-Value="game.Refuelings" />
+            </p>
+            <p>
+                <label>Aggravations:</label>
+                <InputNumber id="aggravations" @bind-Value="game.Aggravations" />
+            </p>
+            <p>
+                <label>Total: @game.TotalCards</label>
+            </p>
+            <p>
+                <label>cartes distribuées: @game.PlayerCards</label>
+            </p>
+            <button type="submit">Démarrer</button>
+        </EditForm>
+    </div>
+} 
+    <h1>Partie en cours</h1>
+    <div>
+        <h2>Cartes joueurs</h2>
+        <ul>
+            @foreach (var stack in game.Stacks)
+            {
+                <li>10 / @stack.MaxCards</li>   
+            }
+        </ul>
+        <button onclick="DrawCard(PlayerCardType.City)">Ville</button>
+        <button onclick="DrawCard(PlayerCardType.Refueling)">Ravitaillement</button>
+        <button onclick="DrawCard(PlayerCardType.Aggravation)">Aggravation</button>
+    </div>
+    <div>
+        <h2>Menaces</h2>
+    </div>
+
+
+@code {
+    private GameModel game = new GameModel();
+
+    private void HandleValidSubmit()
+    {
+        game.Started = true;
+    }
+
+    private void DrawCard(PlayerCardType type){
+        game.DrawCard(type);
+    }
+}

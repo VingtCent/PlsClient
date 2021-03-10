@@ -13,7 +13,7 @@
             </p>
             <p>
                 <label>Villes:</label>
-                <InputNumber id="playerCards" @bind-Value="game.Cities" />
+                <InputNumber id="cities" @bind-Value="game.Cities" />
             </p>
             <p>
                 <label>Ravitaillements:</label>
@@ -24,42 +24,53 @@
                 <InputNumber id="aggravations" @bind-Value="game.Aggravations" />
             </p>
             <p>
-                <label>Total: @game.TotalCards</label>
+                <label>Carte distribuées:</label>
+                <InputNumber id="playercards" @bind-Value="game.PlayerCards" />
             </p>
             <p>
-                <label>cartes distribuées: @game.PlayerCards</label>
+                <label>Total: @game.TotalCards</label>
             </p>
             <button type="submit">Démarrer</button>
         </EditForm>
     </div>
-} 
+}
+else
+{
     <h1>Partie en cours</h1>
+    <p>
+        <label>Niveau de Menace:</label>
+        @* <InputNumber id="level" @bind-Value="game.Level" /> *@
+    </p>
     <div>
-        <h2>Cartes joueurs</h2>
-        <ul>
-            @foreach (var stack in game.Stacks)
+    <h2>Cartes joueurs</h2>
+    <p>
+        <label>Cartes restantes: @game.RemainingCards</label>
+    </p>
+    <ul>
+        @foreach (var stack in game.Stacks)
             {
-                <li>10 / @stack.MaxCards</li>   
+                <li>Pile #@stack.StackNumber @stack.RemainingCards / @stack.MaxCards @stack.ChanceToDrawAggravation(game.Level) </li>
             }
         </ul>
-        <button onclick="DrawCard(PlayerCardType.City)">Ville</button>
-        <button onclick="DrawCard(PlayerCardType.Refueling)">Ravitaillement</button>
-        <button onclick="DrawCard(PlayerCardType.Aggravation)">Aggravation</button>
+        <button @onclick="@(e => DrawCard(PlayerCardType.City))">Ville</button>
+        <button @onclick="@(e => DrawCard(PlayerCardType.Refueling))">Ravitaillement</button>
+        <button @onclick="@(e => DrawCard(PlayerCardType.Aggravation))">Aggravation</button>
     </div>
     <div>
-        <h2>Menaces</h2>
-    </div>
-
+    <h2>Menaces</h2>
+</div>
+}
 
 @code {
     private GameModel game = new GameModel();
 
     private void HandleValidSubmit()
     {
-        game.Started = true;
+        game.Start();
     }
 
-    private void DrawCard(PlayerCardType type){
+    private void DrawCard(PlayerCardType type)
+    {
         game.DrawCard(type);
     }
 }

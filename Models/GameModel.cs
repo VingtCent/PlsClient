@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using MathNet.Numerics;
 
 public class GameModel
 {
@@ -18,44 +20,68 @@ public class GameModel
     [Required]
     [Range(2, 4)]
     public int Players { get; set; } = 4;
+    public int Level { get; set; } = 2;
 
     public bool Started { get; set; }
 
     public int TotalCards { get { return Cities + Refuelings + Aggravations; } }
-    public int RemainingCards { get { return TotalCards - playerCardDrawed.Count; } }
+    public int RemainingCards { get { return Stacks.Sum(s => s.RemainingCards); } }
 
-    public int PlayerCards { get{
-        switch (Players)
-        {
-            case 2: return 8;
-            case 3: return 9;
-            case 4: return 8;
-            default: throw new System.ArgumentOutOfRangeException("Players must be between 2 and 4");
-        }
-    } }
+    public int PlayerCards { get; set; } = 8;
 
-    public IEnumerable<Stack> Stacks
+    public Stack[] Stacks = new Stack[0];
+
+    public void Start()
     {
-        get
+        Started = true;
+        int div = (TotalCards - PlayerCards) / Aggravations;
+        int mod = (TotalCards - PlayerCards) % Aggravations;
+        Stacks = Enumerable.Range(1, Aggravations).Select(i =>
         {
-            for (int i = 0; i < Aggravations; i++)
+            var maxCard = div + ((mod == 0 || i >= mod) ? 0 : 1);
+            return new Stack
             {
-                yield return new Stack{
-                    MaxCards = ((TotalCards - PlayerCards) / Aggravations ) + ((i < TotalCards % Aggravations) ? 1 : 0)
-                };
+                MaxCards = maxCard,
+                StackNumber = i
+            };
+        }).ToArray();
+
+    }
+
+    public void DrawCard(PlayerCardType type)
+    {
+        foreach (var stack in Stacks)
+        {
+            if (stack.TryAddDrawedCard(type))
+            {
+                break;
             }
         }
     }
 
-    private IList<PlayerCardType> playerCardDrawed = new List<PlayerCardType>();
-
-    public void DrawCard(PlayerCardType type)
-    {
-        playerCardDrawed.Add(type);
-    }
-
     public class Stack
     {
+        public int StackNumber { get; set; }
         public int MaxCards { get; set; }
+        public int RemainingCards { get { return MaxCards - drawnedCards.Count; } }
+        private IList<PlayerCardType> drawnedCards = new List<PlayerCardType>();
+
+        public double ChanceToDrawAggravation(int level){
+            if(drawnedCards.Any(c => c == PlayerCardType.Aggravation)){
+                return 0;
+            }
+            return 1;
+            //return Combinatorics.Combinations(1,1)*Combinatorics.Combinations(RemainingCards-1, level-1)/Combinatorics.Combinations(RemainingCards, level);
+        }
+
+        public bool TryAddDrawedCard(PlayerCardType type)
+        {
+            if (drawnedCards.Count >= MaxCards)
+            {
+                return false;
+            }
+            drawnedCards.Add(type);
+            return true;
+        }
     }
 }

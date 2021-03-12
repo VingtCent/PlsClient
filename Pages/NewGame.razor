@@ -38,8 +38,7 @@ else
 {
     <h1>Partie en cours</h1>
     <p>
-        <label>Niveau de Menace:</label>
-        @* <InputNumber id="level" @bind-Value="game.Level" /> *@
+        <label>Nombre de carte piochées: @GameModel.NumberOfDrawnedCard</label>       
     </p>
     <div>
     <h2>Cartes joueurs</h2>
@@ -49,7 +48,7 @@ else
     <ul>
         @foreach (var stack in game.Stacks)
             {
-                <li>Pile #@stack.StackNumber @stack.RemainingCards / @stack.MaxCards @stack.ChanceToDrawAggravation(game.Level) </li>
+                <li>Pile #@stack.StackNumber @stack.RemainingCards / @stack.MaxCards @stack.ChanceToDrawAggravation() </li>
             }
         </ul>
         <button @onclick="@(e => DrawCard(PlayerCardType.City))">Ville</button>

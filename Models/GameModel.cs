@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -5,6 +6,9 @@ using MathNet.Numerics;
 
 public class GameModel
 {
+    private const int NumberOfAggravationPerStack = 1;
+    internal const int NumberOfDrawnedCard = 2;
+
     [Required]
     [Range(1, int.MaxValue)]
     public int Cities { get; set; } = 48;
@@ -39,49 +43,78 @@ public class GameModel
         Stacks = Enumerable.Range(1, Aggravations).Select(i =>
         {
             var maxCard = div + ((mod == 0 || i >= mod) ? 0 : 1);
-            return new Stack
+            return new Stack(NumberOfAggravationPerStack)
             {
                 MaxCards = maxCard,
-                StackNumber = i
+                StackNumber = i                
             };
         }).ToArray();
 
+        SetDrawnedCard();
+    }
+
+    private void SetDrawnedCard()
+    {
+        var cardToDraw = NumberOfDrawnedCard;
+        foreach (var stack in Stacks)
+        {
+            var cardDrawable = Math.Min(stack.RemainingCards, cardToDraw);
+            stack.NumberOfDrawnedCard = cardDrawable;
+            cardToDraw -= cardDrawable;
+        }
     }
 
     public void DrawCard(PlayerCardType type)
     {
+        if (type == PlayerCardType.Aggravation)
+        {
+            Aggravations++;
+        }
+
         foreach (var stack in Stacks)
         {
-            if (stack.TryAddDrawedCard(type))
+            if (stack.RemainingCards > 0)
             {
+                stack.DrawCard(type);
                 break;
             }
         }
+
+        SetDrawnedCard();
     }
 
     public class Stack
     {
+        private readonly int initialNumberOfAggravation;
+        private readonly IList<PlayerCardType> drawnedCards = new List<PlayerCardType>();
+
+        public int NumberOfDrawnedCard { get; set; }
         public int StackNumber { get; set; }
         public int MaxCards { get; set; }
         public int RemainingCards { get { return MaxCards - drawnedCards.Count; } }
-        private IList<PlayerCardType> drawnedCards = new List<PlayerCardType>();
 
-        public double ChanceToDrawAggravation(int level){
-            if(drawnedCards.Any(c => c == PlayerCardType.Aggravation)){
-                return 0;
-            }
-            return 1;
-            //return Combinatorics.Combinations(1,1)*Combinatorics.Combinations(RemainingCards-1, level-1)/Combinatorics.Combinations(RemainingCards, level);
+        public Stack(int initialNumberOfAggravation)
+        {
+            this.initialNumberOfAggravation = initialNumberOfAggravation;
         }
 
-        public bool TryAddDrawedCard(PlayerCardType type)
+        public double ChanceToDrawAggravation()
+        {            
+            // https://www.dcode.fr/probabilites-tirage#0
+            int m = initialNumberOfAggravation - drawnedCards.Count(c => c == PlayerCardType.Aggravation);
+            int k = 1;
+            int N = RemainingCards;
+            int n = NumberOfDrawnedCard;
+            return Combinatorics.Combinations(m, k) * Combinatorics.Combinations(N - m, n - k) / Combinatorics.Combinations(N, n);
+        }
+
+        public void DrawCard(PlayerCardType type)
         {
-            if (drawnedCards.Count >= MaxCards)
+            if (RemainingCards <= 0)
             {
-                return false;
+                throw new IndexOutOfRangeException("No remaining card");
             }
             drawnedCards.Add(type);
-            return true;
         }
     }
 }

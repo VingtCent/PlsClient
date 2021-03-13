@@ -1,4 +1,5 @@
-@page "/newgame"
+@page "/plsgame"
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 
 @if (!game.Started)
 {
@@ -55,10 +56,28 @@ else
         <button @onclick="@(e => DrawCard(PlayerCardType.Refueling))">Ravitaillement</button>
         <button @onclick="@(e => DrawCard(PlayerCardType.Aggravation))">Aggravation</button>
     </div>
+    <button @onclick="e => NewGame()">Nouvelle Partie</button>
 }
 
 @code {
+
     private GameModel game = new GameModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var currentGame = await localStorage.GetItemAsync<GameModel>("currentGame");
+        if (currentGame != null)
+        {
+            game = currentGame;
+        }
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        localStorage.SetItemAsync("currentGame", game);
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
 
     private void HandleValidSubmit()
     {
@@ -68,5 +87,10 @@ else
     private void DrawCard(PlayerCardType type)
     {
         game.DrawCard(type);
+    }
+
+    private void NewGame()
+    {
+        game = new GameModel();
     }
 }

@@ -33,7 +33,7 @@ public class GameModel
 
     public int PlayerCards { get; set; } = 8;
 
-    public Stack[] Stacks = new Stack[0];
+    public Stack[] Stacks { get; set; } = new Stack[0];
 
     public void Start()
     {
@@ -43,8 +43,9 @@ public class GameModel
         Stacks = Enumerable.Range(1, Aggravations).Select(i =>
         {
             var maxCard = div + ((mod == 0 || i >= mod) ? 0 : 1);
-            return new Stack(NumberOfAggravationPerStack)
+            return new Stack
             {
+                InitialNumberOfAggravation = NumberOfAggravationPerStack,
                 MaxCards = maxCard,
                 StackNumber = i                
             };
@@ -85,23 +86,18 @@ public class GameModel
 
     public class Stack
     {
-        private readonly int initialNumberOfAggravation;
-        private readonly IList<PlayerCardType> drawnedCards = new List<PlayerCardType>();
+        public int InitialNumberOfAggravation { get; set; }
+        public ICollection<PlayerCardType> DrawnedCards { get; set; } = new List<PlayerCardType>();
 
         public int NumberOfDrawnedCard { get; set; }
         public int StackNumber { get; set; }
         public int MaxCards { get; set; }
-        public int RemainingCards { get { return MaxCards - drawnedCards.Count; } }
-
-        public Stack(int initialNumberOfAggravation)
-        {
-            this.initialNumberOfAggravation = initialNumberOfAggravation;
-        }
+        public int RemainingCards { get { return MaxCards - DrawnedCards.Count; } }
 
         public double ChanceToDrawAggravation()
         {            
             // https://www.dcode.fr/probabilites-tirage#0
-            int m = initialNumberOfAggravation - drawnedCards.Count(c => c == PlayerCardType.Aggravation);
+            int m = InitialNumberOfAggravation - DrawnedCards.Count(c => c == PlayerCardType.Aggravation);
             int k = 1;
             int N = RemainingCards;
             int n = NumberOfDrawnedCard;
@@ -114,7 +110,7 @@ public class GameModel
             {
                 throw new IndexOutOfRangeException("No remaining card");
             }
-            drawnedCards.Add(type);
+            DrawnedCards.Add(type);
         }
     }
 }

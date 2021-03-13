@@ -38,15 +38,15 @@ else
 {
     <h1>Partie en cours</h1>
     <p>
-        <label>Nombre de carte piochées: @GameModel.NumberOfDrawnedCard</label>       
+        <label>Nombre de carte piochées: @GameModel.NumberOfDrawnedCard</label>
     </p>
     <div>
-    <h2>Cartes joueurs</h2>
-    <p>
-        <label>Cartes restantes: @game.RemainingCards</label>
-    </p>
-    <ul>
-        @foreach (var stack in game.Stacks)
+        <h2>Cartes joueurs</h2>
+        <p>
+            <label>Cartes restantes: @game.RemainingCards</label>
+        </p>
+        <ul>
+            @foreach (var stack in game.Stacks)
             {
                 <li>Pile #@stack.StackNumber @stack.RemainingCards / @stack.MaxCards @stack.ChanceToDrawAggravation() </li>
             }
@@ -55,9 +55,6 @@ else
         <button @onclick="@(e => DrawCard(PlayerCardType.Refueling))">Ravitaillement</button>
         <button @onclick="@(e => DrawCard(PlayerCardType.Aggravation))">Aggravation</button>
     </div>
-    <div>
-    <h2>Menaces</h2>
-</div>
 }
 
 @code {

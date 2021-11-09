@@ -1,6 +1,9 @@
-public enum PlayerCardType
+namespace PlsClient.Models
 {
-    City,
-    Refueling,
-    Aggravation,
+    public enum PlayerCardType
+    {
+        City,
+        Refueling,
+        Aggravation,
+    }
 }

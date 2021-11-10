@@ -1,4 +1,4 @@
-namespace PLsClient.Tests
+namespace PlsClient.Tests.Models
 {
     using System.Linq;
     using Microsoft.VisualStudio.TestTools.UnitTesting;

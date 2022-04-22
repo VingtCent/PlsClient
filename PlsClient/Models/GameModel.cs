@@ -1,115 +1,108 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using MathNet.Numerics;
+
 namespace PlsClient.Models
 {
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
-
     public class GameModel
     {
         private const int NumberOfAggravationPerStack = 1;
         internal const int NumberOfDrawnedCardPerTurn = 2;
 
-        [Required] [Range(1, 48)] public int Cities { get; set; } = 48;
+        [Required]
+        [Range(1, int.MaxValue)]
+        public int Cities { get; set; } = 48;
 
-        [Required] [Range(0, 48)] public int Objectives { get; set; } = 0;
+        [Required]
+        [Range(0, int.MaxValue)]
+        public int Refuelings { get; set; } = 5;
 
-        [Required] [Range(0, int.MaxValue)] public int Refuelings { get; set; } = 5;
+        [Required]
+        [Range(1, int.MaxValue)]
+        public int Aggravations { get; set; } = 5;
 
-        [Required] [Range(1, int.MaxValue)] public int Aggravations { get; set; } = 5;
+        [Required]
+        [Range(2, 4)]
+        public int Players { get; set; } = 4;
 
-        [Required] [Range(2, 4)] public int Players { get; set; } = 4;
+        public bool Started { get; set; }
 
-        public bool IsStarted { get; set; }
+        public int TotalCards { get { return Cities + Refuelings + Aggravations; } }
+        public int RemainingCards { get { return NumberOfCardPerStack.Sum(); } }
 
-        public int TotalPlayerCards
-        {
-            get { return Cities + Refuelings + Aggravations - Objectives - PlayerCards; }
-        }
+        public int PlayerCards { get; set; } = 8;
 
-        public int PlayerCards
-        {
-            get { return Players * 2; }
-        }
+        public int[] NumberOfCardPerStack { get; set; } = new int[0];
 
-        public IList<PlayerCardType> DrawnCards { get; set; } = new List<PlayerCardType>();
+        public int CurrentStack { get; set; } = 0;
+
+        public IList<PlayerCardType> DrawnedCards { get; set; } = new List<PlayerCardType>();
+
+        public bool IsAggravationDrawned { get; set; }
 
         public int NumberOfCardToDraw
         {
-            get { return NumberOfDrawnedCardPerTurn - DrawnCards.Count % NumberOfDrawnedCardPerTurn; }
+            get { return NumberOfDrawnedCardPerTurn - DrawnedCards.Count % NumberOfDrawnedCardPerTurn; }
         }
-
-        public IList<PlayerCardHeaps> PlayerCardHeaps { get; set; } = new List<PlayerCardHeaps>();
 
         public void Start()
         {
-            IsStarted = true;
-            var div = TotalPlayerCards / Aggravations;
-            var mod = TotalPlayerCards % Aggravations;
-
-            for (var i = 0; i < Aggravations; i++)
+            Started = true;
+            int div = (TotalCards - PlayerCards) / Aggravations;
+            int mod = (TotalCards - PlayerCards) % Aggravations;
+            NumberOfCardPerStack = Enumerable.Range(1, Aggravations).Select(i =>
             {
-                PlayerCardHeaps.Add(new PlayerCardHeaps
-                {
-                    InitialNumberOfCards = div + (i < mod ? 1 : 0)
-                });
-            }
+                var maxCard = div + ((mod == 0 || i >= mod) ? 0 : 1);
+                return maxCard;
+            }).ToArray();
         }
 
-        public void Draw(PlayerCardType card)
+        public void DrawCard(PlayerCardType type)
         {
-            DrawnCards.Add(card);
-            foreach (var heap in PlayerCardHeaps)
+            DrawnedCards.Add(type);
+            if (type == PlayerCardType.Aggravation)
             {
-                if (heap.RemainingCards > 0)
-                {
-                    heap.DrawnCards++;
-                    break;
-                }
+                IsAggravationDrawned = true;
+            }
+
+            NumberOfCardPerStack[CurrentStack]--;
+            if (NumberOfCardPerStack[CurrentStack] == 0)
+            {
+                CurrentStack++;
+                IsAggravationDrawned = false;
             }
         }
 
         public double ChanceToDrawAggravation()
         {
-            throw new NotImplementedException();
-
-            //if (IsAggravationDrawn)
-            //{
-            //    return 0;
-            //}
-            //// https://www.dcode.fr/probabilites-tirage#0
-            //int m = NumberOfAggravationPerStack;
-            //int k = 1;
-            //int N = NumberOfCardPerStack[CurrentStack];
-            //int n = Math.Min(NumberOfCardPerStack[CurrentStack],  NumberOfCardToDraw);
-            //return Combinatorics.Combinations(m, k) * Combinatorics.Combinations(N - m, n - k) / Combinatorics.Combinations(N, n);
+            if (IsAggravationDrawned)
+            {
+                return 0;
+            }
+            // https://www.dcode.fr/probabilites-tirage#0
+            int m = NumberOfAggravationPerStack;
+            int k = 1;
+            int N = NumberOfCardPerStack[CurrentStack];
+            int n = Math.Min(NumberOfCardPerStack[CurrentStack],  NumberOfCardToDraw);
+            return Combinatorics.Combinations(m, k) * Combinatorics.Combinations(N - m, n - k) / Combinatorics.Combinations(N, n);
         }
 
         public void Back()
         {
-            //if (DrawnCards.Count > 0)
-            //{
-            //    if (DrawnCards.Last() == PlayerCardType.Aggravation)
-            //    {
-            //        IsAggravationDrawn = false;
-            //    }
+            if (DrawnedCards.Count > 0)
+            {
+                if (DrawnedCards.Last() == PlayerCardType.Aggravation)
+                {
+                    IsAggravationDrawned = false;
+                }
 
-            //    DrawnCards.RemoveAt(DrawnCards.Count - 1);
-            //    NumberOfCardPerStack[CurrentStack]++;
+                DrawnedCards.RemoveAt(DrawnedCards.Count - 1);
+                NumberOfCardPerStack[CurrentStack]++;
 
-
-            //}
+                
+            }
         }
-    }
-
-    public class PlayerCardHeaps
-    {
-        public int InitialNumberOfCards { get; set; }
-
-        public int RemainingCards
-        {
-            get { return InitialNumberOfCards - DrawnCards; }
-        }
-
-        public int DrawnCards { get; set; }
     }
 }
